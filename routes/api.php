@@ -9,5 +9,6 @@ use Illuminate\Support\Facades\Route;
 // })->middleware('auth:sanctum');
 
 
+Route::post('/employees/add-fingerprint', [AttendanceFromDevice::class, 'addFingerPrint']);
 Route::post('/employees/mark-attendance', [AttendanceFromDevice::class, 'storeAttendance']);
 

@@ -13,7 +13,39 @@ class AttendanceFromDevice extends Controller
 
 
 
+    public function addFingerPrint(Request $request)
+    {
+        $request->validate([
+            'employee_uid' => 'required|string',
+            'fingerprint1' => 'required|string',
+            'fingerprint2' => 'nullable|string',
+            'card_identity' => 'nullable|string',
+        ]);
 
+        $employee = Employee::where('employee_uid', $request['employee_uid'])->first();
+        $employee->fingerprint1 = $request['fingerprint1'];
+        $employee->fingerprint2 = $request['fingerprint2'];
+        $employee->card_identity = $request['card_identity'];
+        $employee->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Fingers Taken!',
+        ], 201);
+    }
+
+    // {
+    //     "employee_uid": "HRV_252647_2026",
+    //     "fingerprint1": "Alan-001",
+    //     "fingerprint2": "Alan-002",
+    //     "card_identity": "Alan-Card-001"
+    // }
+
+
+
+
+
+    
 
 
 
@@ -77,8 +109,11 @@ class AttendanceFromDevice extends Controller
         ], 201);
     }
 
-
-
+    // {
+    //     "fingerprint": "FP-011",
+    //     "attend_date": "2026-05-16",
+    //     "action_time": "18:50",
+    // }
 
 
 
