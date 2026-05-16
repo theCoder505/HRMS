@@ -25,7 +25,22 @@ class BasicWorksController extends Controller
 
     public function dashboard()
     {
-        return Inertia::render('dashboard');
+        $totalEmployees = Employee::count();
+        $presentToday = \App\Models\Attendance::whereDate('attend_date', today())->count();
+        $pendingLeaves = Leave::where('approval', '0')->count();
+        $totalDepartments = Department::count();
+        
+        $recentLeaves = Leave::with('employee')->latest()->take(5)->get();
+        $recentEmployees = Employee::latest()->take(5)->get();
+
+        return Inertia::render('dashboard', [
+            'totalEmployees' => $totalEmployees,
+            'presentToday' => $presentToday,
+            'pendingLeaves' => $pendingLeaves,
+            'totalDepartments' => $totalDepartments,
+            'recentLeaves' => $recentLeaves,
+            'recentEmployees' => $recentEmployees,
+        ]);
     }
 
 
