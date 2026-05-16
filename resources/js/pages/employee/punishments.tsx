@@ -71,11 +71,11 @@ export default function Punishments({ punishments }: { punishments: Punishment[]
                                 <div className="text-left sm:text-right shrink-0 border-l border-slate-100 pl-8 dark:border-white/10">
                                     <p className="text-[10px] font-bold text-red-500/70 uppercase tracking-[0.2em] dark:text-red-400/70">Deduction Amount</p>
                                     <p style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-4xl font-bold text-red-600 mt-1 dark:text-red-400">
-                                        ${punishment.deduction_amount}
+                                        ৳{punishment.deduction_amount}
                                     </p>
                                     <div className="mt-3 space-y-1">
                                         <p className="text-[11px] text-slate-400 dark:text-[#8b8fa8]">Affected Base Salary:</p>
-                                        <p className="text-sm font-bold text-slate-700 dark:text-white">${punishment.basic_salary}</p>
+                                        <p className="text-sm font-bold text-slate-700 dark:text-white">৳{punishment.basic_salary}</p>
                                     </div>
                                 </div>
                             </div>

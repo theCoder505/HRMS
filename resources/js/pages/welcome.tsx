@@ -2,8 +2,10 @@ import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 
 export default function Welcome() {
-    const { auth, name } = usePage<SharedData>().props;
-    const appName = (name as string) || 'PeopleOS';
+    const { auth, name, settings } = usePage<SharedData>().props;
+
+    const appName = settings?.brand_name || (name as string) || 'PeopleOS';
+
 
     return (
         <>
@@ -172,14 +174,20 @@ export default function Welcome() {
 
             {/* ── NAV ── */}
             <nav className="nav">
-                <div className="nav-logo"><img src="/assets/logo.png" alt={appName} style={{ height: '32px', objectFit: 'contain', verticalAlign: 'middle' }} /></div>
+                <div className="nav-logo">
+                    <img src={settings?.brand_logo || "/assets/logo.png"} alt={settings?.brand_name || appName} style={{ height: '32px', objectFit: 'contain', verticalAlign: 'middle' }} />
+                </div>
                 <div className="nav-links">
                     <a href="#features">Features</a>
                     <a href="#testimonials">Reviews</a>
+                    <Link href={route('about')}>About Us</Link>
                 </div>
+
                 <div className="nav-actions">
                     {auth.user ? (
                         <Link href={route('dashboard')} className="btn btn-primary">HR Dashboard</Link>
+                    ) : (auth as any).employee ? (
+                        <Link href={route('employee.dashboard')} className="btn btn-primary">Employee Dashboard</Link>
                     ) : (
                         <>
                             <Link href={route('employee.login')} className="btn btn-ghost">Employee Portal</Link>
@@ -202,11 +210,25 @@ export default function Welcome() {
                     Payroll, attendance, leaves, performance and more — unified in one beautiful, fast platform that your team will actually love to use.
                 </p>
                 <div className="hero-actions fu d3">
-                    <Link href={route('employee.login')} className="btn btn-primary btn-lg">
-                        Employee Portal
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    </Link>
-                    <Link href={route('hrm.login')} className="btn btn-ghost btn-lg">HR Login</Link>
+                    {auth.user ? (
+                        <Link href={route('dashboard')} className="btn btn-primary btn-lg">
+                            Go to Dashboard
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </Link>
+                    ) : (auth as any).employee ? (
+                        <Link href={route('employee.dashboard')} className="btn btn-primary btn-lg">
+                            Go to Dashboard
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </Link>
+                    ) : (
+                        <>
+                            <Link href={route('employee.login')} className="btn btn-primary btn-lg">
+                                Employee Portal
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            </Link>
+                            <Link href={route('hrm.login')} className="btn btn-ghost btn-lg">HR Login</Link>
+                        </>
+                    )}
                 </div>
 
                 {/* Stats strip */}
@@ -320,11 +342,37 @@ export default function Welcome() {
 
             {/* ── FOOTER ── */}
             <footer>
-                <div className="nav-logo">
-                    <img src="/assets/logo.png" alt={appName} style={{ height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.7 }} />
+                <div className="flex flex-col md:flex-row items-center justify-between w-full gap-8">
+                    <div className="flex items-center gap-6">
+                        <div className="nav-logo">
+                            <img src={settings?.brand_logo || "/assets/logo.png"} alt={settings?.brand_name || appName} style={{ height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.7 }} />
+                        </div>
+                        <div className="hidden md:flex gap-6 border-l border-white/10 pl-6">
+                            <Link href={route('about')} className="text-[13px] text-[#8b8fa8] hover:text-white transition-colors">About Us</Link>
+                            <Link href={route('privacy.policy')} className="text-[13px] text-[#8b8fa8] hover:text-white transition-colors">Privacy Policy</Link>
+                            <Link href={route('terms.conditions')} className="text-[13px] text-[#8b8fa8] hover:text-white transition-colors">Terms & Conditions</Link>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-center md:items-end gap-2">
+                        {settings?.contact_email && (
+                            <a href={`mailto:${settings.contact_email}`} className="text-[12px] text-[#8b8fa8] hover:text-white transition-colors">
+                                {settings.contact_email}
+                            </a>
+                        )}
+                        <div className="flex gap-4">
+                            {settings?.facebook && <a href={settings.facebook} target="_blank" className="text-[#8b8fa8] hover:text-white transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>}
+                            {settings?.twitter && <a href={settings.twitter} target="_blank" className="text-[#8b8fa8] hover:text-white transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg></a>}
+                            {settings?.instagram && <a href={settings.instagram} target="_blank" className="text-[#8b8fa8] hover:text-white transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>}
+                            {settings?.linkedin && <a href={settings.linkedin} target="_blank" className="text-[#8b8fa8] hover:text-white transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>}
+                        </div>
+                        <div className="foot-copy mt-2">© {new Date().getFullYear()} {settings?.brand_name || 'PeopleOS'}. All rights reserved.</div>
+                    </div>
                 </div>
-                <div className="foot-copy">© {new Date().getFullYear()} PeopleOS. All rights reserved.</div>
             </footer>
+
+
+
         </>
     );
 }

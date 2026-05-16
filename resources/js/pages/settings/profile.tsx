@@ -1,16 +1,15 @@
-import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Transition } from '@headlessui/react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { FormEventHandler, useRef } from 'react';
+import AppearanceTabs from '@/components/appearance-tabs';
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
-import AppearanceTabs from '@/components/appearance-tabs';
+import { type BreadcrumbItem, type SharedData } from '@/types';
+import { Transition } from '@headlessui/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { FormEventHandler, useRef } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -31,9 +30,9 @@ function ProfileForm({ mustVerifyEmail, status, auth }: { mustVerifyEmail: boole
     };
 
     return (
-        <div className="space-y-6">
+        <div className="w-full space-y-6">
             <HeadingSmall title="Profile information" description="Update your name and email address" />
-            <form onSubmit={submit} className="space-y-6 max-w-xl">
+            <form onSubmit={submit} className="w-full space-y-6">
                 <div className="grid gap-2">
                     <Label htmlFor="name">Name</Label>
                     <Input
@@ -129,7 +128,7 @@ function PasswordForm() {
     return (
         <div className="space-y-6">
             <HeadingSmall title="Update password" description="Ensure your account is using a long, random password to stay secure" />
-            <form onSubmit={updatePassword} className="space-y-6 max-w-xl">
+            <form onSubmit={updatePassword} className="max-w-xl space-y-6">
                 <div className="grid gap-2">
                     <Label htmlFor="current_password">Current password</Label>
                     <Input
@@ -196,18 +195,14 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
             <Head title="Settings" />
 
             <SettingsLayout>
-                <div className="space-y-10">
+                <div className="grid grid-cols-1 gap-6 space-y-10 lg:grid-cols-2">
                     <ProfileForm mustVerifyEmail={mustVerifyEmail} status={status} auth={auth} />
-                    
-                    <Separator />
-                    
                     <PasswordForm />
-                    
-                    <Separator />
-                    
-                    <div className="space-y-6">
-                        <HeadingSmall title="Appearance settings" description="Update your account's appearance settings" />
-                        <AppearanceTabs />
+                    <div className="col-span-2 flex items-center justify-center space-y-6">
+                        <div className="grid gap-2">
+                            <HeadingSmall title="Appearance settings" description="Update your account's appearance settings" />
+                            <AppearanceTabs />
+                        </div>
                     </div>
                 </div>
             </SettingsLayout>

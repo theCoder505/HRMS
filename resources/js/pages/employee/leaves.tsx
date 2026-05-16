@@ -85,7 +85,7 @@ export default function Leaves({ leaves }: { leaves: Leave[] }) {
                 </div>
                 <button 
                     onClick={() => setShowForm(!showForm)}
-                    className={`flex items-center gap-2 rounded-xl px-5 py-2.5 font-semibold text-white shadow-lg transition-all ${
+                    className={`flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 font-semibold text-white shadow-lg transition-all ${
                         showForm 
                         ? 'bg-slate-500 hover:bg-slate-600' 
                         : 'bg-purple-600 hover:bg-purple-500 shadow-purple-500/20 hover:shadow-purple-500/40'

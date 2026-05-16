@@ -1,6 +1,6 @@
 import EmployeeLayout from '@/layouts/employee-layout';
 import { Head } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
     Calendar, 
     CheckCircle2, 
@@ -10,7 +10,6 @@ import {
     ChevronLeft, 
     ChevronRight, 
     Search,
-    Info,
     Gift,
     MinusCircle
 } from 'lucide-react';
@@ -66,6 +65,21 @@ function datesInRange(from: string, to: string): string[] {
     return out;
 }
 
+/** Sat on or before date */
+function startOfWeek(d: Date): Date {
+    const res = new Date(d);
+    const diff = (res.getDay() - 6 + 7) % 7;
+    res.setDate(res.getDate() - diff);
+    return res;
+}
+
+/** Fri on or after date */
+function endOfWeek(d: Date): Date {
+    const res = startOfWeek(d);
+    res.setDate(res.getDate() + 6);
+    return res;
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 type AttendanceStatus = 'present' | 'late' | 'early-out' | 'absent' | 'weekend' | 'holiday';
 
@@ -79,6 +93,7 @@ interface ComputedAttendance {
     earlyOutMins: number;
     overtimeMins: number;
     holidayName?: string;
+    isBeforeJoin: boolean;
 }
 
 export default function Attendance({ attendances, holidays, employee }: Props) {
@@ -86,8 +101,12 @@ export default function Attendance({ attendances, holidays, employee }: Props) {
     const [customFrom, setCustomFrom] = useState('');
     const [customTo, setCustomTo] = useState('');
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const perPage = 7;
 
-    // ── Helper: Time to Minutes
+    // Reset page on tab change
+    useEffect(() => { setPage(1); }, [tab, search]);
+
     const toMins = (time: string | null) => {
         if (!time) return null;
         const [h, m] = time.split(':').map(Number);
@@ -101,22 +120,23 @@ export default function Attendance({ attendances, holidays, employee }: Props) {
         return h > 0 ? `${h}h ${m}m` : `${m}m`;
     };
 
-    // ── Range Calculators
+    // ── Range Calculators (Sat to Fri)
     const weekRange = useMemo(() => {
-        const now = new Date();
-        const sinceSat = (now.getDay() - 6 + 7) % 7;
-        const sat = new Date(now);
-        sat.setDate(now.getDate() - sinceSat);
-        const fri = new Date(sat);
-        fri.setDate(sat.getDate() + 6);
-        return { from: fmtDate(sat), to: fmtDate(fri) };
+        const start = startOfWeek(new Date());
+        const end = endOfWeek(new Date());
+        return { from: fmtDate(start), to: fmtDate(end) };
     }, []);
 
     const monthRange = useMemo(() => {
         const now = new Date();
-        const first = new Date(now.getFullYear(), now.getMonth(), 1);
-        const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        return { from: fmtDate(first), to: fmtDate(last) };
+        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        
+        // Ensure month view starts on a Saturday to align with 7-day pagination
+        const gridStart = startOfWeek(firstOfMonth);
+        const gridEnd = endOfWeek(lastOfMonth);
+        
+        return { from: fmtDate(gridStart), to: fmtDate(gridEnd) };
     }, []);
 
     const activeRange = useMemo(() => {
@@ -125,7 +145,6 @@ export default function Attendance({ attendances, holidays, employee }: Props) {
         return { from: customFrom, to: customTo };
     }, [tab, weekRange, monthRange, customFrom, customTo]);
 
-    // ── Computation Logic
     const allRows = useMemo(() => {
         const { from, to } = activeRange;
         if (!from || !to) return [];
@@ -144,7 +163,6 @@ export default function Attendance({ attendances, holidays, employee }: Props) {
             const dayName = getDayName(date);
             const record = recordsMap.get(date);
             const holidayName = holidaysMap.get(date);
-            
             const joinDate = employee.join_date || '1970-01-01';
             const isBeforeJoin = date < joinDate;
 
@@ -158,15 +176,12 @@ export default function Attendance({ attendances, holidays, employee }: Props) {
             else if (record) {
                 const actualIn = toMins(record.clock_in_time);
                 const actualOut = toMins(record.clock_out_time);
-                
                 if (actualIn !== null && shiftIn !== null) lateMins = Math.max(0, actualIn - shiftIn);
                 if (actualOut !== null && shiftOut !== null) {
                     earlyOutMins = Math.max(0, shiftOut - actualOut);
                     overtimeMins = Math.max(0, actualOut - shiftOut);
                 }
-                
                 status = lateMins > 0 ? 'late' : 'present';
-                if (status === 'present' && earlyOutMins > 0 && !record.clock_out_time) status = 'early-out';
             }
 
             return {
@@ -174,7 +189,7 @@ export default function Attendance({ attendances, holidays, employee }: Props) {
                 dayName,
                 clockIn: record?.clock_in_time || null,
                 clockOut: record?.clock_out_time || null,
-                status: isBeforeJoin ? 'absent' : status, // Simplified
+                status: isBeforeJoin ? 'absent' : status,
                 lateMins,
                 earlyOutMins,
                 overtimeMins,
@@ -188,15 +203,16 @@ export default function Attendance({ attendances, holidays, employee }: Props) {
         if (!search.trim()) return allRows;
         const q = search.toLowerCase();
         return allRows.filter(r => 
-            r.date.includes(q) || 
-            r.dayName.toLowerCase().includes(q) || 
-            r.holidayName?.toLowerCase().includes(q)
+            r.date.includes(q) || r.dayName.toLowerCase().includes(q) || r.holidayName?.toLowerCase().includes(q)
         );
     }, [allRows, search]);
 
+    const totalPages = Math.ceil(filteredRows.length / perPage);
+    const pageRows = filteredRows.slice((page - 1) * perPage, page * perPage);
+
     const stats = useMemo(() => {
         return {
-            present: allRows.filter(r => r.status === 'present' || r.status === 'late').length,
+            present: allRows.filter(r => (r.status === 'present' || r.status === 'late') && !r.isBeforeJoin).length,
             absent: allRows.filter(r => r.status === 'absent' && !r.isBeforeJoin).length,
             late: allRows.filter(r => r.status === 'late').length,
             holidays: new Set(allRows.filter(r => r.holidayName).map(r => r.date)).size
@@ -210,7 +226,7 @@ export default function Attendance({ attendances, holidays, employee }: Props) {
             <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <h1 style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white transition-colors">Attendance Reports</h1>
-                    <p className="mt-2 text-lg text-slate-500 dark:text-[#8b8fa8]">Complete calendar view of your work history</p>
+                    <p className="mt-2 text-lg text-slate-500 dark:text-[#8b8fa8]">Week by week view (Saturday – Friday)</p>
                 </div>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -279,17 +295,17 @@ export default function Attendance({ attendances, holidays, employee }: Props) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-white/[0.05]">
-                            {filteredRows.length === 0 ? (
+                            {pageRows.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-20 text-center text-slate-400 dark:text-[#8b8fa8]">
                                         <div className="flex flex-col items-center gap-3">
                                             <Calendar className="h-10 w-10 opacity-20" />
-                                            <p>No records found for the selected range.</p>
+                                            <p>No records found.</p>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
-                                filteredRows.map((row) => (
+                                pageRows.map((row) => (
                                     <tr key={row.date} className={`transition-colors ${row.status === 'weekend' ? 'bg-slate-50/30 dark:bg-white/[0.01]' : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'}`}>
                                         <td className="px-6 py-5">
                                             <div className="font-bold text-slate-900 dark:text-white">{row.date}</div>
@@ -318,6 +334,31 @@ export default function Attendance({ attendances, holidays, employee }: Props) {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
+                        <p className="text-sm text-slate-500 dark:text-[#8b8fa8]">
+                            Page <span className="font-bold text-slate-900 dark:text-white">{page}</span> of <span className="font-bold text-slate-900 dark:text-white">{totalPages}</span>
+                        </p>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="p-2 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-30 dark:border-white/10 dark:text-[#8b8fa8]"
+                            >
+                                <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            <button
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                                className="p-2 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-30 dark:border-white/10 dark:text-[#8b8fa8]"
+                            >
+                                <ChevronRight className="h-5 w-5" />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </EmployeeLayout>
     );
@@ -332,9 +373,7 @@ function StatusBadge({ status, holidayName }: { status: AttendanceStatus, holida
         weekend: { label: 'Weekend', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400', icon: MinusCircle },
         holiday: { label: holidayName || 'Holiday', cls: 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400', icon: Gift },
     };
-
     const { label, cls, icon: Icon } = MAP[status];
-    
     return (
         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ring-1 ring-inset ring-current/20 ${cls}`}>
             <Icon className="h-3 w-3" />

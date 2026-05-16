@@ -1,5 +1,5 @@
 import { usePage, Link } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { type SharedData } from '@/types';
 import { useAppearance } from '@/hooks/use-appearance';
 import { Sun, Moon, Monitor, LogOut, Menu, X } from 'lucide-react';
@@ -51,15 +51,8 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
             <nav className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-xl transition-colors dark:border-white/[0.06] dark:bg-[#05060a]/80 sm:px-6 lg:px-8">
                 {/* Logo */}
                 <div className="flex items-center gap-4">
-                    <Link href={route('employee.dashboard')} className="flex items-center gap-2.5 shrink-0">
-                        <img src="/assets/hrms_icon.png" alt={appName} className="h-8 w-8 object-contain" />
-                        <span style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                              className="hidden text-base font-bold tracking-tight sm:block text-slate-900 dark:text-white">
-                            {appName}
-                            <span className="ml-1.5 rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-purple-600 align-middle dark:bg-purple-500/15 dark:text-purple-400">
-                                Employee
-                            </span>
-                        </span>
+                    <Link href="/" className="flex items-center gap-2.5 shrink-0">
+                        <img src="/assets/logo.png" alt={appName} className="h-10 w-auto object-contain" />
                     </Link>
                 </div>
 

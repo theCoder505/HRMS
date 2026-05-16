@@ -62,7 +62,7 @@ export default function Profile({ employee }: { employee: any }) {
                             <DollarSign className="h-4 w-4 text-slate-400 dark:text-[#5b5f78]" />
                             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest dark:text-[#5b5f78]">Basic Salary</p>
                         </div>
-                        <p className="text-xl font-medium text-emerald-600 dark:text-emerald-400">${employee.salary || '0.00'}</p>
+                        <p className="text-xl font-medium text-emerald-600 dark:text-emerald-400">৳{employee.salary || '0.00'}</p>
                     </div>
 
                     <div className="group">

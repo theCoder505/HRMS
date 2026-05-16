@@ -60,7 +60,7 @@ export default function Payrolls({ payrolls }: { payrolls: Payroll[] }) {
                                     <div className="text-right">
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] dark:text-[#8b8fa8]">Net Salary</p>
                                         <p style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                                            ${payroll.net_salary}
+                                            ৳{payroll.net_salary}
                                         </p>
                                     </div>
                                     <button 
@@ -82,15 +82,15 @@ export default function Payrolls({ payrolls }: { payrolls: Payroll[] }) {
                                         <div className="space-y-4 rounded-xl bg-slate-50 p-5 border border-slate-100 dark:bg-white/[0.02] dark:border-white/[0.05]">
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-slate-500 dark:text-[#8b8fa8]">Basic Salary</span>
-                                                <span className="text-slate-900 font-medium dark:text-white">${payroll.basic_salary}</span>
+                                                <span className="text-slate-900 font-medium dark:text-white">৳{payroll.basic_salary}</span>
                                             </div>
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-slate-500 dark:text-[#8b8fa8]">Allowances</span>
-                                                <span className="text-emerald-600 font-medium dark:text-emerald-400">+${payroll.allowance || '0.00'}</span>
+                                                <span className="text-emerald-600 font-medium dark:text-emerald-400">+৳{payroll.allowance || '0.00'}</span>
                                             </div>
                                             <div className="border-t border-slate-200 pt-4 flex justify-between font-bold dark:border-white/[0.07]">
                                                 <span className="text-slate-900 dark:text-white">Gross Salary</span>
-                                                <span className="text-slate-900 dark:text-white">${(parseFloat(payroll.basic_salary) + parseFloat(payroll.allowance || '0')).toFixed(2)}</span>
+                                                <span className="text-slate-900 dark:text-white">৳{(parseFloat(payroll.basic_salary) + parseFloat(payroll.allowance || '0')).toFixed(2)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -103,15 +103,15 @@ export default function Payrolls({ payrolls }: { payrolls: Payroll[] }) {
                                         <div className="space-y-4 rounded-xl bg-slate-50 p-5 border border-slate-100 dark:bg-white/[0.02] dark:border-white/[0.05]">
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-slate-500 dark:text-[#8b8fa8]">Punishments</span>
-                                                <span className="text-red-500 font-medium">-${payroll.punishment_deduction || '0.00'}</span>
+                                                <span className="text-red-500 font-medium">-৳{payroll.punishment_deduction || '0.00'}</span>
                                             </div>
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-slate-500 dark:text-[#8b8fa8]">Tax / PF / Others</span>
-                                                <span className="text-red-500 font-medium">-$0.00</span>
+                                                <span className="text-red-500 font-medium">-৳0.00</span>
                                             </div>
                                             <div className="border-t border-slate-200 pt-4 flex justify-between font-bold dark:border-white/[0.07]">
                                                 <span className="text-slate-900 dark:text-white">Total Deductions</span>
-                                                <span className="text-red-500">-${payroll.punishment_deduction || '0.00'}</span>
+                                                <span className="text-red-500">-৳{payroll.punishment_deduction || '0.00'}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -120,7 +120,7 @@ export default function Payrolls({ payrolls }: { payrolls: Payroll[] }) {
                                         <div>
                                             <p className="text-emerald-700 text-[10px] font-bold uppercase tracking-[0.15em] dark:text-emerald-400/70">Final Net Payout</p>
                                             <p style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-4xl font-bold text-slate-900 mt-1 dark:text-white">
-                                                ${payroll.net_salary}
+                                                ৳{payroll.net_salary}
                                             </p>
                                         </div>
                                         <button 

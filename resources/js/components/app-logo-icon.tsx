@@ -1,6 +1,14 @@
+import { usePage } from '@inertiajs/react';
+import { SharedData } from '@/types';
 import { SVGAttributes } from 'react';
 
 export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
+    const { settings } = usePage<SharedData>().props;
+    
+    if (settings?.brand_icon) {
+        return <img src={settings.brand_icon} alt="Icon" className={props.className} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />;
+    }
+
     return (
         <svg {...props} viewBox="0 0 40 42" xmlns="http://www.w3.org/2000/svg">
             <path
@@ -11,3 +19,4 @@ export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
         </svg>
     );
 }
+
