@@ -1,96 +1,88 @@
 import EmployeeLayout from '@/layouts/employee-layout';
 import { Head } from '@inertiajs/react';
+import { AlertTriangle, Clock, Calendar } from 'lucide-react';
 
 interface Punishment {
     id: number;
+    employee_uid: string;
     title: string;
     punishment_reason: string;
     effective_from: string;
     effective_to: string;
-    basic_salary: number;
-    deduction_amount: number;
+    basic_salary: string;
+    deduction_amount: string;
     created_at: string;
 }
 
 export default function Punishments({ punishments }: { punishments: Punishment[] }) {
     return (
         <EmployeeLayout>
-            <Head title="My Punishments" />
-
-            <div className="mb-8">
-                <h1 className="font-['Syne',sans-serif] text-3xl font-extrabold tracking-tight">Disciplinary Actions</h1>
-                <p className="mt-2 text-lg text-gray-600">View all disciplinary actions issued to you</p>
+            <Head title="Punishments" />
+            
+            <div className="mb-10">
+                <h1 style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white transition-colors">Punishments</h1>
+                <p className="mt-2 text-lg text-slate-500 dark:text-[#8b8fa8]">Records of disciplinary actions and salary deductions</p>
             </div>
 
-            {punishments.length === 0 ? (
-                <div className="rounded-xl border border-[#e2dfd6] bg-white p-12 text-center shadow-sm">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
-                        <svg className="h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+            <div className="grid gap-6">
+                {punishments.length === 0 ? (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-slate-400 dark:border-white/[0.07] dark:bg-white/[0.03] dark:text-[#8b8fa8] backdrop-blur-md transition-colors">
+                        <AlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                        <p>No punishment records found.</p>
                     </div>
-                    <p className="text-lg font-semibold text-gray-700">All clear!</p>
-                    <p className="mt-1 text-sm text-gray-500">No disciplinary actions on record.</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {punishments.map((p) => {
-                        const pct = p.basic_salary > 0 ? ((p.deduction_amount / p.basic_salary) * 100).toFixed(1) : null;
-                        return (
-                            <div key={p.id} className="rounded-xl border border-red-200 bg-white shadow-sm overflow-hidden">
-                                <div className="flex items-start justify-between gap-4 p-6">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className="rounded-full bg-red-100 p-2">
-                                                <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.834-2.694-.834-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                                </svg>
-                                            </div>
-                                            <h3 className="text-xl font-bold font-['Syne',sans-serif] text-gray-900">{p.title}</h3>
+                ) : (
+                    punishments.map((punishment) => (
+                        <div key={punishment.id} className="group rounded-2xl border border-slate-200 bg-white p-8 shadow-sm backdrop-blur-md transition-all hover:border-red-500/30 hover:bg-red-50/30 dark:border-white/[0.07] dark:bg-white/[0.03] dark:hover:bg-red-500/[0.02]">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-8">
+                                <div className="flex-1">
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <div className="rounded-xl bg-red-500/10 p-2.5 text-red-600 ring-1 ring-red-500/20 dark:text-red-400">
+                                            <AlertTriangle className="h-5 w-5" />
                                         </div>
-
-                                        <p className="text-gray-600 mb-4 leading-relaxed">{p.punishment_reason}</p>
-
-                                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                            <div className="rounded-lg bg-gray-50 p-3">
-                                                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Effective From</p>
-                                                <p className="mt-1 font-semibold text-gray-800">
-                                                    {new Date(p.effective_from).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                </p>
+                                        <h3 style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-2xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+                                            {punishment.title}
+                                        </h3>
+                                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 ring-1 ring-slate-200 dark:bg-white/5 dark:text-[#8b8fa8] dark:ring-white/10">
+                                            Record ID: #{punishment.id}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="mt-6 space-y-4">
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 dark:text-[#5b5f78]">Disciplinary Reason</p>
+                                            <p className="text-lg text-slate-700 leading-relaxed dark:text-[#8b8fa8]">
+                                                {punishment.punishment_reason}
+                                            </p>
+                                        </div>
+                                        
+                                        <div className="flex flex-wrap gap-6 pt-2">
+                                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-[#8b8fa8]">
+                                                <Calendar className="h-4 w-4" />
+                                                From: <span className="font-semibold text-slate-700 dark:text-white">{punishment.effective_from}</span>
                                             </div>
-                                            <div className="rounded-lg bg-gray-50 p-3">
-                                                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Effective To</p>
-                                                <p className="mt-1 font-semibold text-gray-800">
-                                                    {new Date(p.effective_to).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                </p>
-                                            </div>
-                                            <div className="rounded-lg bg-red-50 p-3">
-                                                <p className="text-xs font-semibold uppercase tracking-wider text-red-500">Deduction</p>
-                                                <p className="mt-1 font-bold text-red-700 font-['Syne',sans-serif] text-lg">
-                                                    ${Number(p.deduction_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                </p>
-                                                {pct && <p className="text-xs text-red-500 mt-0.5">{pct}% of basic</p>}
-                                            </div>
-                                            <div className="rounded-lg bg-gray-50 p-3">
-                                                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Basic Salary</p>
-                                                <p className="mt-1 font-semibold text-gray-800">
-                                                    ${Number(p.basic_salary).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                </p>
+                                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-[#8b8fa8]">
+                                                <Clock className="h-4 w-4" />
+                                                To: <span className="font-semibold text-slate-700 dark:text-white">{punishment.effective_to}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div className="border-t border-red-100 bg-red-50/50 px-6 py-3">
-                                    <p className="text-xs text-gray-500">
-                                        Issued on {new Date(p.created_at).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                
+                                <div className="text-left sm:text-right shrink-0 border-l border-slate-100 pl-8 dark:border-white/10">
+                                    <p className="text-[10px] font-bold text-red-500/70 uppercase tracking-[0.2em] dark:text-red-400/70">Deduction Amount</p>
+                                    <p style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-4xl font-bold text-red-600 mt-1 dark:text-red-400">
+                                        ${punishment.deduction_amount}
                                     </p>
+                                    <div className="mt-3 space-y-1">
+                                        <p className="text-[11px] text-slate-400 dark:text-[#8b8fa8]">Affected Base Salary:</p>
+                                        <p className="text-sm font-bold text-slate-700 dark:text-white">${punishment.basic_salary}</p>
+                                    </div>
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
-            )}
+                        </div>
+                    ))
+                )}
+            </div>
         </EmployeeLayout>
     );
 }

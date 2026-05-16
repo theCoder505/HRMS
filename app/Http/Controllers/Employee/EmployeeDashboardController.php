@@ -74,14 +74,35 @@ class EmployeeDashboardController extends Controller
     {
         $employee = Auth::guard('employee')->user();
         
-        $query = Attendance::where('employee_uid', $employee->employee_uid)->latest('attend_date');
+        $query = Attendance::where('employee_uid', $employee->employee_uid);
 
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('attend_date', [$request->start_date, $request->end_date]);
+        // Fetch all attendance for the employee (we'll filter/paginate in frontend or fetch a large enough chunk)
+        // To be safe and "just like HR", we fetch everything or a range
+        $attendances = $query->latest('attend_date')->get();
+        
+        $holidays = Holiday::all();
+        
+        return Inertia::render('employee/attendance', [
+            'attendances' => $attendances,
+            'holidays' => $holidays,
+            'employee' => $employee, // contains join_date, weekend, shift times
+        ]);
+    }
+
+    public function delete_leave($id)
+    {
+        $employee = Auth::guard('employee')->user();
+        $leave = Leave::where('id', $id)->where('employee_uid', $employee->employee_uid)->firstOrFail();
+
+        // Allow deletion only if not updated by HR yet
+        // We check if created_at and updated_at are the same (within a small margin)
+        // or simply if approval is still 0. The user specifically asked for created_at vs updated_at.
+        if ($leave->created_at != $leave->updated_at) {
+            return back()->with('error', 'This request has already been processed by HR and cannot be deleted.');
         }
 
-        $attendances = $query->get();
-        return Inertia::render('employee/attendance', compact('attendances'));
+        $leave->delete();
+        return back()->with('success', 'Leave request deleted successfully.');
     }
 
     public function payrolls()
@@ -104,7 +125,6 @@ class EmployeeDashboardController extends Controller
 
         $announcements = Announcement::where('type', 'all')
             ->orWhereHas('employees', function ($q) use ($employee) {
-                // Qualify with pivot table to avoid "Column ambiguous" error
                 $q->where('announcement_employee.employee_uid', $employee->employee_uid);
             })
             ->latest()

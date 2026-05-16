@@ -17,6 +17,7 @@ Route::middleware('auth:employee')->prefix('employee')->group(function () {
     
     Route::get('leaves', [EmployeeDashboardController::class, 'leaves'])->name('employee.leaves');
     Route::post('leaves', [EmployeeDashboardController::class, 'submit_leave'])->name('employee.leaves.store');
+    Route::delete('leaves/{id}', [EmployeeDashboardController::class, 'delete_leave'])->name('employee.leaves.destroy');
     
     Route::get('attendance', [EmployeeDashboardController::class, 'attendance'])->name('employee.attendance');
     

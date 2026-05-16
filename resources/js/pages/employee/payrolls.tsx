@@ -1,146 +1,142 @@
 import EmployeeLayout from '@/layouts/employee-layout';
 import { Head } from '@inertiajs/react';
+import { ChevronDown, FileText, Download } from 'lucide-react';
 import { useState } from 'react';
+import Swal from 'sweetalert2';
 
 interface Payroll {
     id: number;
     employee_uid: string;
-    basic_salary: number;
-    net_amount: number;
-    payment_includes: string[];
-    salary_month: string;
-    salary_year: string;
-    note: string | null;
+    basic_salary: string;
+    allowance: string;
+    punishment_deduction: string;
+    net_salary: string;
+    month: string;
+    year: string;
     created_at: string;
 }
 
-const monthNames = [
-    'January','February','March','April','May','June',
-    'July','August','September','October','November','December',
-];
-
 export default function Payrolls({ payrolls }: { payrolls: Payroll[] }) {
-    const [expanded, setExpanded] = useState<number | null>(null);
+    const [expandedId, setExpandedId] = useState<number | null>(null);
 
-    const toggle = (id: number) => setExpanded(expanded === id ? null : id);
+    const handleDownload = () => {
+        Swal.fire({
+            title: 'Generating PDF...',
+            text: 'Your salary slip is being prepared.',
+            icon: 'info',
+            timer: 2000,
+            showConfirmButton: false,
+            background: document.documentElement.classList.contains('dark') ? '#111827' : '#fff',
+            color: document.documentElement.classList.contains('dark') ? '#fff' : '#000',
+        });
+    };
 
     return (
         <EmployeeLayout>
             <Head title="My Payrolls" />
-
-            <div className="mb-8">
-                <h1 className="font-['Syne',sans-serif] text-3xl font-extrabold tracking-tight">My Payrolls</h1>
-                <p className="mt-2 text-lg text-gray-600">View all your salary slips and payment details</p>
+            
+            <div className="mb-10">
+                <h1 style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">My Payrolls</h1>
+                <p className="mt-2 text-lg text-slate-500 dark:text-[#8b8fa8]">View and download your monthly salary slips</p>
             </div>
 
-            {payrolls.length === 0 ? (
-                <div className="rounded-xl border border-[#e2dfd6] bg-white p-12 text-center shadow-sm">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-                        <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <div className="grid gap-6">
+                {payrolls.length === 0 ? (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-slate-400 dark:border-white/[0.07] dark:bg-white/[0.03] dark:text-[#8b8fa8] backdrop-blur-md">
+                        <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                        <p>No payroll records found.</p>
                     </div>
-                    <p className="text-lg font-medium text-gray-600">No payroll records found.</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {payrolls.map((payroll) => (
-                        <div key={payroll.id} className="rounded-xl border border-[#e2dfd6] bg-white shadow-sm overflow-hidden">
-                            {/* Header row */}
-                            <button
-                                onClick={() => toggle(payroll.id)}
-                                className="w-full flex items-center justify-between p-6 text-left hover:bg-[#f7f6f2] transition-colors"
-                            >
+                ) : (
+                    payrolls.map((payroll) => (
+                        <div key={payroll.id} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm backdrop-blur-md transition-all hover:border-slate-300 dark:border-white/[0.07] dark:bg-white/[0.03] dark:hover:border-white/10">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50/50 p-6 border-b border-slate-100 gap-4 dark:bg-white/[0.02] dark:border-white/[0.07]">
+                                <div>
+                                    <h3 style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-xl font-bold text-slate-900 dark:text-white">
+                                        Payroll for {payroll.month} {payroll.year}
+                                    </h3>
+                                    <p className="text-sm text-slate-500 mt-1 dark:text-[#8b8fa8]">Generated on {new Date(payroll.created_at).toLocaleDateString()}</p>
+                                </div>
                                 <div className="flex items-center gap-6">
-                                    <div className="rounded-lg bg-[#d4500a]/10 px-4 py-2">
-                                        <p className="font-['Syne',sans-serif] text-sm font-bold text-[#d4500a] uppercase">
-                                            {payroll.salary_month ? monthNames[parseInt(payroll.salary_month) - 1] : '—'}
-                                        </p>
-                                        <p className="text-xs text-[#d4500a]/70">{payroll.salary_year}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-lg font-bold font-['Syne',sans-serif]">
-                                            ${Number(payroll.net_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            <span className="ml-2 text-sm font-normal text-gray-500">net pay</span>
-                                        </p>
-                                        <p className="text-sm text-gray-500">
-                                            Basic: ${Number(payroll.basic_salary).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    <div className="text-right">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] dark:text-[#8b8fa8]">Net Salary</p>
+                                        <p style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                                            ${payroll.net_salary}
                                         </p>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <span
-                                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                                            Number(payroll.net_amount) >= Number(payroll.basic_salary)
-                                                ? 'bg-emerald-100 text-emerald-800'
-                                                : 'bg-amber-100 text-amber-800'
-                                        }`}
+                                    <button 
+                                        onClick={() => setExpandedId(expandedId === payroll.id ? null : payroll.id)}
+                                        className="rounded-xl bg-slate-100 p-2.5 text-slate-600 transition-all hover:bg-slate-200 ring-1 ring-slate-200 dark:bg-white/[0.05] dark:text-white dark:hover:bg-white/10 dark:ring-white/10"
                                     >
-                                        {Number(payroll.net_amount) >= Number(payroll.basic_salary) ? 'No Deduction' : 'Deducted'}
-                                    </span>
-                                    <svg
-                                        className={`h-5 w-5 text-gray-400 transition-transform ${expanded === payroll.id ? 'rotate-180' : ''}`}
-                                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                    >
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
+                                        <ChevronDown className={`h-5 w-5 transition-transform duration-300 ${expandedId === payroll.id ? 'rotate-180' : ''}`} />
+                                    </button>
                                 </div>
-                            </button>
+                            </div>
 
-                            {/* Expanded details */}
-                            {expanded === payroll.id && (
-                                <div className="border-t border-[#e2dfd6] bg-[#fafafa] px-6 py-5">
-                                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                                        <div>
-                                            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Basic Salary</p>
-                                            <p className="mt-1 text-xl font-bold font-['Syne',sans-serif]">
-                                                ${Number(payroll.basic_salary).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Net Pay</p>
-                                            <p className="mt-1 text-xl font-bold font-['Syne',sans-serif] text-emerald-600">
-                                                ${Number(payroll.net_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Difference</p>
-                                            <p className={`mt-1 text-xl font-bold font-['Syne',sans-serif] ${Number(payroll.net_amount) - Number(payroll.basic_salary) < 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                                                ${(Number(payroll.net_amount) - Number(payroll.basic_salary)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                            </p>
-                                        </div>
-
-                                        {payroll.payment_includes && payroll.payment_includes.length > 0 && (
-                                            <div className="sm:col-span-2 lg:col-span-3">
-                                                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Payment Includes</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {payroll.payment_includes.map((item) => (
-                                                        <span key={item} className="inline-flex rounded-md bg-[#0d0f14]/10 px-2 py-1 text-xs font-semibold capitalize text-[#0d0f14]">
-                                                            {item.replace(/_/g, ' ')}
-                                                        </span>
-                                                    ))}
-                                                </div>
+                            {expandedId === payroll.id && (
+                                <div className="p-8 grid gap-8 md:grid-cols-2 bg-transparent animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="space-y-6">
+                                        <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 dark:text-[#8b8fa8]">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                            Earnings
+                                        </h4>
+                                        <div className="space-y-4 rounded-xl bg-slate-50 p-5 border border-slate-100 dark:bg-white/[0.02] dark:border-white/[0.05]">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500 dark:text-[#8b8fa8]">Basic Salary</span>
+                                                <span className="text-slate-900 font-medium dark:text-white">${payroll.basic_salary}</span>
                                             </div>
-                                        )}
-
-                                        {payroll.note && (
-                                            <div className="sm:col-span-2 lg:col-span-3">
-                                                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Note</p>
-                                                <p className="text-sm text-gray-700 rounded-md bg-white border border-[#e2dfd6] p-3">{payroll.note}</p>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500 dark:text-[#8b8fa8]">Allowances</span>
+                                                <span className="text-emerald-600 font-medium dark:text-emerald-400">+${payroll.allowance || '0.00'}</span>
                                             </div>
-                                        )}
+                                            <div className="border-t border-slate-200 pt-4 flex justify-between font-bold dark:border-white/[0.07]">
+                                                <span className="text-slate-900 dark:text-white">Gross Salary</span>
+                                                <span className="text-slate-900 dark:text-white">${(parseFloat(payroll.basic_salary) + parseFloat(payroll.allowance || '0')).toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
 
+                                    <div className="space-y-6">
+                                        <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 dark:text-[#8b8fa8]">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                                            Deductions
+                                        </h4>
+                                        <div className="space-y-4 rounded-xl bg-slate-50 p-5 border border-slate-100 dark:bg-white/[0.02] dark:border-white/[0.05]">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500 dark:text-[#8b8fa8]">Punishments</span>
+                                                <span className="text-red-500 font-medium">-${payroll.punishment_deduction || '0.00'}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500 dark:text-[#8b8fa8]">Tax / PF / Others</span>
+                                                <span className="text-red-500 font-medium">-$0.00</span>
+                                            </div>
+                                            <div className="border-t border-slate-200 pt-4 flex justify-between font-bold dark:border-white/[0.07]">
+                                                <span className="text-slate-900 dark:text-white">Total Deductions</span>
+                                                <span className="text-red-500">-${payroll.punishment_deduction || '0.00'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="md:col-span-2 mt-4 rounded-2xl bg-emerald-50 p-6 border border-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-6 dark:bg-emerald-500/10 dark:border-emerald-500/20">
                                         <div>
-                                            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Issued On</p>
-                                            <p className="mt-1 text-sm font-medium text-gray-700">
-                                                {new Date(payroll.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
+                                            <p className="text-emerald-700 text-[10px] font-bold uppercase tracking-[0.15em] dark:text-emerald-400/70">Final Net Payout</p>
+                                            <p style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-4xl font-bold text-slate-900 mt-1 dark:text-white">
+                                                ${payroll.net_salary}
                                             </p>
                                         </div>
+                                        <button 
+                                            onClick={handleDownload}
+                                            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-3.5 font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:bg-emerald-500 hover:scale-[1.02] active:scale-[0.98] dark:bg-emerald-500 dark:shadow-emerald-500/25 dark:hover:bg-emerald-400"
+                                        >
+                                            <Download className="h-5 w-5" />
+                                            Download Slip (PDF)
+                                        </button>
                                     </div>
                                 </div>
                             )}
                         </div>
-                    ))}
-                </div>
-            )}
+                    ))
+                )}
+            </div>
         </EmployeeLayout>
     );
 }

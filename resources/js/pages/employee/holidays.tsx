@@ -1,5 +1,6 @@
 import EmployeeLayout from '@/layouts/employee-layout';
 import { Head } from '@inertiajs/react';
+import { Calendar, Info } from 'lucide-react';
 
 interface Holiday {
     id: number;
@@ -9,115 +10,94 @@ interface Holiday {
     end_date: string;
 }
 
-function getDays(start: string, end: string) {
-    const diff = new Date(end).getTime() - new Date(start).getTime();
-    return Math.round(diff / (1000 * 60 * 60 * 24)) + 1;
-}
-
-function isUpcoming(start: string) {
-    return new Date(start) >= new Date(new Date().toDateString());
-}
-
 export default function Holidays({ holidays }: { holidays: Holiday[] }) {
-    const upcoming = holidays.filter((h) => isUpcoming(h.start_date));
-    const past = holidays.filter((h) => !isUpcoming(h.start_date));
-
-    const HolidayCard = ({ h }: { h: Holiday }) => {
-        const days = getDays(h.start_date, h.end_date);
-        const upcoming = isUpcoming(h.start_date);
-        return (
-            <div className={`rounded-xl border shadow-sm overflow-hidden transition-shadow hover:shadow-md ${upcoming ? 'border-[#d4500a]/30 bg-white' : 'border-[#e2dfd6] bg-white'}`}>
-                <div className={`h-1.5 w-full ${upcoming ? 'bg-[#d4500a]' : 'bg-gray-200'}`} />
-                <div className="p-6">
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                        <h3 className="text-lg font-bold font-['Syne',sans-serif] text-gray-900">{h.title}</h3>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${upcoming ? 'bg-[#d4500a]/10 text-[#d4500a]' : 'bg-gray-100 text-gray-500'}`}>
-                                {upcoming ? 'Upcoming' : 'Past'}
-                            </span>
-                            <span className="text-xs text-gray-400 font-medium">{days} {days === 1 ? 'day' : 'days'}</span>
-                        </div>
-                    </div>
-
-                    {h.reason && (
-                        <p className="text-sm text-gray-600 mb-4 leading-relaxed">{h.reason}</p>
-                    )}
-
-                    <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-1.5">
-                            <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span className="text-gray-700 font-medium">
-                                {new Date(h.start_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </span>
-                        </div>
-                        {h.start_date !== h.end_date && (
-                            <>
-                                <span className="text-gray-300">→</span>
-                                <div className="flex items-center gap-1.5">
-                                    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    <span className="text-gray-700 font-medium">
-                                        {new Date(h.end_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
-                                    </span>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    };
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    const upcoming = holidays.filter(h => h.end_date >= todayStr).sort((a, b) => a.start_date.localeCompare(b.start_date));
+    const past = holidays.filter(h => h.end_date < todayStr).sort((a, b) => b.start_date.localeCompare(a.start_date));
 
     return (
         <EmployeeLayout>
-            <Head title="Holidays" />
-
-            <div className="mb-8">
-                <h1 className="font-['Syne',sans-serif] text-3xl font-extrabold tracking-tight">Holidays</h1>
-                <p className="mt-2 text-lg text-gray-600">Company-wide holidays and scheduled off-days</p>
+            <Head title="Company Holidays" />
+            
+            <div className="mb-10">
+                <h1 style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white transition-colors">Company Holidays</h1>
+                <p className="mt-2 text-lg text-slate-500 dark:text-[#8b8fa8]">Calendar of scheduled time-offs and events</p>
             </div>
 
-            {holidays.length === 0 ? (
-                <div className="rounded-xl border border-[#e2dfd6] bg-white p-12 text-center shadow-sm">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
-                        <svg className="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+            <div className="space-y-16">
+                {/* Upcoming Holidays */}
+                <section>
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+                        <h2 style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-xl font-bold text-slate-900 uppercase tracking-wider dark:text-white">Upcoming Holidays</h2>
                     </div>
-                    <p className="text-lg font-semibold text-gray-700">No holidays listed yet</p>
-                </div>
-            ) : (
-                <div className="space-y-10">
-                    {upcoming.length > 0 && (
-                        <section>
-                            <h2 className="font-['Syne',sans-serif] text-xl font-bold mb-4 flex items-center gap-2">
-                                <span className="inline-block h-3 w-3 rounded-full bg-[#d4500a]" />
-                                Upcoming Holidays
-                                <span className="ml-1 rounded-full bg-[#d4500a]/10 px-2 py-0.5 text-xs font-semibold text-[#d4500a]">{upcoming.length}</span>
-                            </h2>
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {upcoming.map((h) => <HolidayCard key={h.id} h={h} />)}
+                    
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {upcoming.length === 0 ? (
+                            <div className="col-span-full rounded-2xl border border-dashed border-slate-200 p-12 text-center text-slate-400 dark:border-white/10 dark:text-[#8b8fa8]">
+                                No upcoming holidays scheduled.
                             </div>
-                        </section>
-                    )}
+                        ) : (
+                            upcoming.map((holiday) => (
+                                <div key={holiday.id} className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm backdrop-blur-md transition-all hover:border-emerald-500/30 hover:bg-emerald-50/30 dark:border-white/[0.07] dark:bg-white/[0.03] dark:hover:bg-emerald-500/[0.02]">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="rounded-xl bg-emerald-500/10 p-3 text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-400">
+                                            <Calendar className="h-6 w-6" />
+                                        </div>
+                                        <div className="text-right">
+                                            <p style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-xl font-bold text-slate-900 dark:text-white">
+                                                {holiday.start_date === holiday.end_date 
+                                                    ? new Date(holiday.start_date).getDate() 
+                                                    : `${new Date(holiday.start_date).getDate()}-${new Date(holiday.end_date).getDate()}`
+                                                }
+                                            </p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest dark:text-[#8b8fa8]">
+                                                {new Date(holiday.start_date).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-emerald-600 transition-colors dark:text-white dark:group-hover:text-emerald-400">{holiday.title}</h3>
+                                    <div className="flex items-start gap-2 rounded-lg bg-slate-50 p-3 dark:bg-white/5">
+                                        <Info className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
+                                        <p className="text-sm text-slate-600 leading-relaxed dark:text-[#8b8fa8]">{holiday.reason}</p>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-[11px] font-medium text-slate-400 dark:border-white/5 dark:text-[#5b5f78]">
+                                        <span>Duration:</span>
+                                        <span className="text-slate-600 dark:text-[#8b8fa8]">
+                                            {Math.ceil((new Date(holiday.end_date).getTime() - new Date(holiday.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1} Day(s)
+                                        </span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </section>
 
-                    {past.length > 0 && (
-                        <section>
-                            <h2 className="font-['Syne',sans-serif] text-xl font-bold mb-4 flex items-center gap-2 text-gray-500">
-                                <span className="inline-block h-3 w-3 rounded-full bg-gray-300" />
-                                Past Holidays
-                                <span className="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500">{past.length}</span>
-                            </h2>
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {past.map((h) => <HolidayCard key={h.id} h={h} />)}
-                            </div>
-                        </section>
-                    )}
-                </div>
-            )}
+                {/* Past Holidays */}
+                <section>
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="h-2 w-2 rounded-full bg-slate-300 dark:bg-white/20" />
+                        <h2 style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-xl font-bold text-slate-400 uppercase tracking-wider dark:text-[#8b8fa8]">Past Holidays</h2>
+                    </div>
+                    
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                        {past.length === 0 ? (
+                            <p className="text-slate-400 italic text-sm dark:text-[#8b8fa8]">No past records available.</p>
+                        ) : (
+                            past.map((holiday) => (
+                                <div key={holiday.id} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 opacity-60 transition-all hover:opacity-100 dark:border-white/[0.05] dark:bg-white/[0.01]">
+                                    <div className="text-sm font-semibold text-slate-700 dark:text-white mb-1">{holiday.title}</div>
+                                    <p className="text-xs text-slate-400 dark:text-[#8b8fa8]">
+                                        {new Date(holiday.start_date).toLocaleDateString()}
+                                        {holiday.start_date !== holiday.end_date && ` - ${new Date(holiday.end_date).toLocaleDateString()}`}
+                                    </p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </section>
+            </div>
         </EmployeeLayout>
     );
 }

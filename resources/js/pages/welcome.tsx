@@ -2,11 +2,12 @@ import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 
 export default function Welcome() {
-    const { auth } = usePage<SharedData>().props;
+    const { auth, name } = usePage<SharedData>().props;
+    const appName = (name as string) || 'PeopleOS';
 
     return (
         <>
-            <Head title="PeopleOS — Modern HR Platform">
+            <Head title={`${appName} — Modern HR Platform`}>
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -171,7 +172,7 @@ export default function Welcome() {
 
             {/* ── NAV ── */}
             <nav className="nav">
-                <div className="nav-logo">People<span>OS</span></div>
+                <div className="nav-logo"><img src="/assets/logo.png" alt={appName} style={{ height: '32px', objectFit: 'contain', verticalAlign: 'middle' }} /></div>
                 <div className="nav-links">
                     <a href="#features">Features</a>
                     <a href="#testimonials">Reviews</a>
@@ -319,8 +320,8 @@ export default function Welcome() {
 
             {/* ── FOOTER ── */}
             <footer>
-                <div className="nav-logo" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '1.1rem' }}>
-                    People<span style={{ background: 'linear-gradient(135deg,#6c63ff,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>OS</span>
+                <div className="nav-logo">
+                    <img src="/assets/logo.png" alt={appName} style={{ height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.7 }} />
                 </div>
                 <div className="foot-copy">© {new Date().getFullYear()} PeopleOS. All rights reserved.</div>
             </footer>
