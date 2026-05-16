@@ -108,19 +108,6 @@ Route::middleware(['auth.hrm'])->prefix('hrm')->group(function () {
 
 
 
-Route::middleware(['auth.employee'])->group(function () {
-    Route::get('employee/dashboard', fn() => Inertia::render('employee/dashboard'))->name('employee.dashboard');
-});
-
-
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
-
-
-// Route::prefix('hrm')->group(function () {
-//     require __DIR__.'/hrm.php';
-// });
-
-// Route::prefix('employee')->group(function () {
-//     require __DIR__.'/employee.php';
-// });
+require __DIR__ . '/employee.php';
