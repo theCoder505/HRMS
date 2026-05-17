@@ -32,12 +32,23 @@ class PasswordController extends Controller
         $validated = $request->validate([
             'current_password' => ['required', 'current_password'],
             'password' => ['required', Password::defaults(), 'confirmed'],
+            'otp' => ['required', 'string'],
         ]);
 
-        $request->user()->update([
+        $user = $request->user();
+
+        if (!$user->otp || $user->otp != $request->otp || $user->otp_expires_at->isPast()) {
+            return back()->withErrors(['otp' => 'The provided OTP is invalid or has expired.']);
+        }
+
+        // Clear OTP after successful verification
+        $user->otp = null;
+        $user->otp_expires_at = null;
+
+        $user->update([
             'password' => Hash::make($validated['password']),
         ]);
 
-        return back();
+        return back()->with('success', 'Password updated successfully.');
     }
 }

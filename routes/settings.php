@@ -13,6 +13,8 @@ Route::middleware('auth')->prefix('hrm')->group(function () {
 
     Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
 
+    Route::post('settings/send-otp', [ProfileController::class, 'sendOtp'])->name('profile.send-otp');
+
     // Password and appearance are now on the same page as profile
     Route::redirect('settings/password', '/hrm/settings/profile')->name('password.edit');
     Route::redirect('settings/appearance', '/hrm/settings/profile')->name('appearance');

@@ -8,8 +8,16 @@ import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Transition } from '@headlessui/react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { FormEventHandler, useRef } from 'react';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
+import { FormEventHandler, useRef, useState } from 'react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -19,14 +27,42 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 function ProfileForm({ mustVerifyEmail, status, auth }: { mustVerifyEmail: boolean; status?: string; auth: any }) {
-    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
+    const { data, setData, patch, errors, processing, recentlySuccessful, reset } = useForm({
         name: auth.user.name,
         email: auth.user.email,
+        old_email: '',
+        otp: '',
     });
+
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otpSending, setOtpSending] = useState(false);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        patch(route('profile.update'));
+
+        // If email changed and no OTP provided yet
+        if (data.email !== auth.user.email && !data.otp) {
+            sendOtp();
+            return;
+        }
+
+        patch(route('profile.update'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowOtpModal(false);
+                setData('otp', '');
+            },
+        });
+    };
+
+    const sendOtp = () => {
+        setOtpSending(true);
+        router.post(route('profile.send-otp'), { type: 'email' }, {
+            onSuccess: () => setShowOtpModal(true),
+            onFinish: () => setOtpSending(false),
+            preserveScroll: true,
+            preserveState: true,
+        });
     };
 
     return (
@@ -81,7 +117,9 @@ function ProfileForm({ mustVerifyEmail, status, auth }: { mustVerifyEmail: boole
                     </div>
                 )}
                 <div className="flex items-center gap-4">
-                    <Button disabled={processing}>Save Profile</Button>
+                    <Button disabled={processing || otpSending}>
+                        {otpSending ? 'Sending OTP...' : 'Save Profile'}
+                    </Button>
                     <Transition
                         show={recentlySuccessful}
                         enter="transition ease-in-out"
@@ -93,11 +131,57 @@ function ProfileForm({ mustVerifyEmail, status, auth }: { mustVerifyEmail: boole
                     </Transition>
                 </div>
             </form>
+
+            <Dialog open={showOtpModal} onOpenChange={setShowOtpModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Verify Email Change</DialogTitle>
+                        <DialogDescription>
+                            We've sent a 6-digit verification code to <strong>{auth.user.email}</strong>. Please enter it below to confirm your
+                            email change.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="old_email_confirm">Current Email Address</Label>
+                            <Input
+                                id="old_email_confirm"
+                                type="email"
+                                value={data.old_email}
+                                onChange={(e) => setData('old_email', e.target.value)}
+                                placeholder="Enter your current email"
+                            />
+                            <InputError message={errors.old_email} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="otp">Verification Code</Label>
+                            <Input
+                                id="otp"
+                                value={data.otp}
+                                onChange={(e) => setData('otp', e.target.value)}
+                                placeholder="Enter 6-digit OTP"
+                                maxLength={6}
+                                className="text-center text-2xl tracking-[0.5em]"
+                            />
+                            <InputError message={errors.otp} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setShowOtpModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="button" onClick={submit} disabled={processing}>
+                            Verify & Update
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
 
 function PasswordForm() {
+    const { auth } = usePage<SharedData>().props;
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
 
@@ -105,13 +189,42 @@ function PasswordForm() {
         current_password: '',
         password: '',
         password_confirmation: '',
+        otp: '',
     });
+
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otpSending, setOtpSending] = useState(false);
+
+    const sendOtp = () => {
+        // Validate password fields before sending OTP
+        if (!data.current_password || !data.password || !data.password_confirmation) {
+            put(route('password.update')); // This will trigger server-side validation for these fields
+            return;
+        }
+
+        setOtpSending(true);
+        router.post(route('profile.send-otp'), { type: 'password' }, {
+            onSuccess: () => setShowOtpModal(true),
+            onFinish: () => setOtpSending(false),
+            preserveScroll: true,
+            preserveState: true,
+        });
+    };
 
     const updatePassword: FormEventHandler = (e) => {
         e.preventDefault();
+
+        if (!data.otp) {
+            sendOtp();
+            return;
+        }
+
         put(route('password.update'), {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                reset();
+                setShowOtpModal(false);
+            },
             onError: (errors) => {
                 if (errors.password) {
                     reset('password', 'password_confirmation');
@@ -171,7 +284,9 @@ function PasswordForm() {
                     <InputError message={errors.password_confirmation} />
                 </div>
                 <div className="flex items-center gap-4">
-                    <Button disabled={processing}>Save password</Button>
+                    <Button disabled={processing || otpSending}>
+                        {otpSending ? 'Sending OTP...' : 'Save password'}
+                    </Button>
                     <Transition
                         show={recentlySuccessful}
                         enter="transition ease-in-out"
@@ -183,6 +298,40 @@ function PasswordForm() {
                     </Transition>
                 </div>
             </form>
+
+            <Dialog open={showOtpModal} onOpenChange={setShowOtpModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Verify Password Change</DialogTitle>
+                        <DialogDescription>
+                            We've sent a 6-digit verification code to <strong>{auth.user.email}</strong>. Please enter it below to confirm your
+                            password change.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="password_otp">Verification Code</Label>
+                            <Input
+                                id="password_otp"
+                                value={data.otp}
+                                onChange={(e) => setData('otp', e.target.value)}
+                                placeholder="Enter 6-digit OTP"
+                                maxLength={6}
+                                className="text-center text-2xl tracking-[0.5em]"
+                            />
+                            <InputError message={errors.otp} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setShowOtpModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="button" onClick={updatePassword} disabled={processing}>
+                            Verify & Update
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

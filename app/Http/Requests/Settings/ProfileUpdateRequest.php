@@ -27,6 +27,8 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(HRM::class)->ignore($this->user()->id),
             ],
+            'otp' => ['nullable', 'string'],
+            'old_email' => ['nullable', 'email'],
         ];
     }
 }

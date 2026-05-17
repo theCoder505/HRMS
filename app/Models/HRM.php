@@ -30,6 +30,8 @@ class HRM extends Authenticatable
         'name',
         'email',
         'password',
+        'otp',
+        'otp_expires_at',
     ];
 
     /**
@@ -52,6 +54,7 @@ class HRM extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'otp_expires_at' => 'datetime',
         ];
     }
 }
