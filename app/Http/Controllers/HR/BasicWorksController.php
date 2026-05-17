@@ -386,7 +386,7 @@ class BasicWorksController extends Controller
             $assetsDir = public_path('assets');
             if (!is_dir($assetsDir)) mkdir($assetsDir, 0755, true);
             $request->file('brand_logo')->move($assetsDir, 'logo.png');
-            $settings->brand_logo = 'assets/logo.png';
+            $settings->brand_logo = '/assets/logo.png';
         }
 
         if ($brandIconChanged) {

@@ -13,9 +13,9 @@ class Leave extends Model
         'leave_from_date',
         'leave_to_date',
         'type',
-        'deduction_type',
-        'deduction_amount',
-        'approval',
+        'deduction_type', // percent / fixed
+        'deduction_amount', // amount/percent in BDT
+        'approval', // approved => 1 else pending
     ];
 
     public function employee()

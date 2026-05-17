@@ -16,7 +16,7 @@ class SettingsSeeder extends Seeder
         if (!Setting::exists()) {
             Setting::create([
                 'brand_name' => 'HR Venture',
-                'brand_logo' => 'assets/logo.png',
+                'brand_logo' => '/assets/logo.png',
                 'brand_icon' => 'assets/hrms_icon.png',
                 'location' => 'HRVenture, House 49, Road 90, Gulshan-2, Dhaka 1212',
                 'gogle_map' => 'HRVenture',

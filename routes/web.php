@@ -6,6 +6,7 @@ use App\Http\Controllers\HRM\AttendanceController;
 use App\Http\Controllers\HRM\EmployeeController;
 use App\Http\Controllers\HRM\PayrollController;
 use App\Http\Controllers\HRM\PromotionsController;
+use App\Http\Controllers\WebPagesController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -13,18 +14,11 @@ Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
-Route::get('/about', function () {
-    return Inertia::render('about');
-})->name('about');
+Route::get('/about', [WebPagesController::class, 'about'])->name('about');
 
-Route::get('/privacy-policy', function () {
+Route::get('/privacy-policy', [WebPagesController::class, 'privacy'])->name('privacy.policy');
 
-    return Inertia::render('privacy-policy');
-})->name('privacy.policy');
-
-Route::get('/terms-conditions', function () {
-    return Inertia::render('terms-conditions');
-})->name('terms.conditions');
+Route::get('/terms-conditions', [WebPagesController::class, 'terms'])->name('terms.conditions');
 
 
 

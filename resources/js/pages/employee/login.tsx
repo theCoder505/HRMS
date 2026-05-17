@@ -46,7 +46,7 @@ export default function Login() {
                     {/* Logo & Branding */}
                     <Link href='/' className="relative z-10 flex items-center gap-3">
                         <div className="flex h-16 items-center justify-center rounded-2xl shadow">
-                            <img src={settings?.brand_logo || "/assets/logo.png"} alt={settings?.brand_name || appName} className="h-12 w-full object-contain" />
+                            <img src={"/" + settings?.brand_logo || "/assets/logo.png"} alt={settings?.brand_name || appName} className="h-12 w-full object-contain" />
                         </div>
                     </Link>
 

@@ -101,12 +101,6 @@ function fmtDate(d: Date): string {
     return `${d.getFullYear()}-${zeroPad(d.getMonth() + 1)}-${zeroPad(d.getDate())}`;
 }
 
-/** YYYY-MM-DD → JS day index 0=Sun … 6=Sat (local, no UTC shift) */
-function dayIndex(date: string): number {
-    const [y, m, d] = date.split('-').map(Number);
-    return new Date(y, m - 1, d).getDay();
-}
-
 /** YYYY-MM-DD → short day name e.g. "Sat" */
 function getDayName(date: string): string {
     const [y, m, d] = date.split('-').map(Number);
@@ -229,12 +223,6 @@ function getWeekRange(): { from: string; to: string } {
 
 /**
  * Month grid — always complete Sat→Fri weeks that cover the whole calendar month.
- *
- *   gridStart  = Saturday on or before the 1st of the month
- *   gridEnd    = Friday on or after the last day of the month
- *
- * Total rows = multiple of 7 → totalPages (weeks) = rows / 7.
- * Dates outside [monthStart, monthEnd] become PadRows.
  */
 function getMonthGrid(): { gridStart: string; gridEnd: string; monthStart: string; monthEnd: string } {
     const now = new Date();
@@ -264,8 +252,8 @@ function getMonthGrid(): { gridStart: string; gridEnd: string; monthStart: strin
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const WEEK_SIZE = 7; // rows per page in month view (one Sat–Fri week)
-const DEFAULT_PAGE = 10; // rows per page for today / week / custom
+const WEEK_SIZE = 7;
+const DEFAULT_PAGE = 10;
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Attendance', href: '/hrm/attendance' }];
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
@@ -328,6 +316,9 @@ function EmpAvatar({ emp, size = 8 }: { emp: EmployeeMini | null; size?: number 
 // ── Page component ────────────────────────────────────────────────────────────
 
 export default function Attendance({ attendance, employees, holidays }: Props) {
+    // ── Local attendance state — mirrors the prop but is updated optimistically
+    const [localAttendance, setLocalAttendance] = useState<AttendanceRecord[]>(attendance);
+
     // ── Tab state
     const [tab, setTab] = useState<'today' | 'week' | 'month' | 'custom'>('today');
     const [customFrom, setCustomFrom] = useState('');
@@ -344,7 +335,6 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
     const [addOpen, setAddOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const [selectedDateRecords, setSelectedDateRecords] = useState<ComputedAttendance[]>([]);
 
     // ── Forms
     const addForm = useForm({ employee_uid: '', attend_date: getToday(), clock_in_time: '', clock_out_time: '' });
@@ -354,8 +344,7 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
     // ── Month grid (computed once per month tab activation)
     const monthGrid = useMemo(() => (tab === 'month' ? getMonthGrid() : null), [tab]);
 
-    // ── Query range: the real date range we fetch attendance data for
-    //    For month view this is [monthStart, monthEnd] — not the padded grid
+    // ── Query range
     const queryRange = useMemo((): { from: string; to: string } => {
         if (tab === 'today') return { from: getToday(), to: getToday() };
         if (tab === 'week') return getWeekRange();
@@ -363,14 +352,14 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
         return { from: customFrom, to: customTo };
     }, [tab, customFrom, customTo, monthGrid]);
 
-    // ── Attendance matrix: date → ComputedAttendance[] for real dates only
+    // ── Attendance matrix: date → ComputedAttendance[] — built from localAttendance
     const attendanceMatrix = useMemo<Map<string, ComputedAttendance[]>>(() => {
         if (!queryRange.from || !queryRange.to) return new Map();
 
         const recMap = new Map<string, AttendanceRecord>();
         const dateMap = new Map<string, ComputedAttendance[]>();
 
-        attendance.forEach((r) => recMap.set(`${r.employee_uid}|${r.attend_date}`, r));
+        localAttendance.forEach((r) => recMap.set(`${r.employee_uid}|${r.attend_date}`, r));
         datesInRange(queryRange.from, queryRange.to).forEach((d) => dateMap.set(d, []));
 
         employees.forEach((emp) => {
@@ -393,16 +382,19 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
         });
 
         return dateMap;
-    }, [attendance, employees, holidays, queryRange.from, queryRange.to]);
+    }, [localAttendance, employees, holidays, queryRange.from, queryRange.to]);
+
+    // ── Live dialog records — derived from matrix so they update immediately
+    const selectedDateRecords = useMemo<ComputedAttendance[]>(() => {
+        if (!selectedDate) return [];
+        return attendanceMatrix.get(selectedDate) ?? [];
+    }, [selectedDate, attendanceMatrix]);
 
     // ── Build the full flat list of display rows
-    //    Month view → PadRows + DataRows always sorted Sat→Fri, never re-sorted
-    //    Other views → DataRows only, sortable
     const allRows = useMemo((): TableRow[] => {
         const rows: TableRow[] = [];
 
         if (tab === 'month' && monthGrid) {
-            // Iterate the full padded grid (always a multiple of 7)
             for (const date of datesInRange(monthGrid.gridStart, monthGrid.gridEnd)) {
                 const isPad = date < monthGrid.monthStart || date > monthGrid.monthEnd;
 
@@ -428,11 +420,9 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
                     holidayName: holidayInfo?.title,
                 });
             }
-            // Month rows: always chronological — no sorting
             return rows;
         }
 
-        // Non-month: DataRows only
         const { from, to } = queryRange;
         if (!from || !to) return rows;
 
@@ -470,7 +460,7 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
         return rows;
     }, [tab, monthGrid, attendanceMatrix, queryRange, holidays, sortField, sortDir]);
 
-    // ── Search filter (no search in month view; pad rows always pass)
+    // ── Search filter
     const filteredRows = useMemo((): TableRow[] => {
         if (tab === 'month' || !search.trim()) return allRows;
         const q = search.toLowerCase();
@@ -484,12 +474,11 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
     }, [allRows, search, tab]);
 
     // ── Pagination
-    //    Month: 7 rows/page = 1 Sat–Fri week. Others: DEFAULT_PAGE rows/page.
     const perPage = tab === 'month' ? WEEK_SIZE : DEFAULT_PAGE;
     const totalPages = Math.max(1, Math.ceil(filteredRows.length / perPage));
     const pageRows = filteredRows.slice((page - 1) * perPage, page * perPage);
 
-    // ── Summary stats (DataRows only, pad excluded)
+    // ── Summary stats
     const stats = useMemo(() => {
         let present = 0,
             absent = 0,
@@ -517,9 +506,28 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
         return `${localLabel(first, { day: '2-digit', month: 'short' })} – ${localLabel(last, { day: '2-digit', month: 'short', year: 'numeric' })}`;
     }, [tab, page, filteredRows]);
 
-    // ── Handlers
+    // ── Optimistic local state helpers ────────────────────────────────────────
+
+    /** Upsert a record in localAttendance (for add/edit) */
+    function upsertLocalRecord(updated: AttendanceRecord) {
+        setLocalAttendance((prev) => {
+            const idx = prev.findIndex((r) => r.employee_uid === updated.employee_uid && r.attend_date === updated.attend_date);
+            if (idx === -1) return [updated, ...prev];
+            const next = [...prev];
+            next[idx] = updated;
+            return next;
+        });
+    }
+
+    /** Remove a record by id from localAttendance (for delete) */
+    function removeLocalRecord(id: number) {
+        setLocalAttendance((prev) => prev.filter((r) => r.id !== id));
+    }
+
+    // ── Handlers ─────────────────────────────────────────────────────────────
+
     function handleSort(field: string) {
-        if (tab === 'month') return; // month is always chronological
+        if (tab === 'month') return;
         if (sortField === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
         else {
             setSortField(field);
@@ -530,7 +538,6 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
 
     function openDateView(date: string) {
         setSelectedDate(date);
-        setSelectedDateRecords(attendanceMatrix.get(date) ?? []);
         setViewOpen(true);
     }
 
@@ -565,7 +572,16 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
     function submitAdd(e: React.FormEvent) {
         e.preventDefault();
         addForm.post(route('hr.attendance.store'), {
-            onSuccess: () => {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                // Build a synthetic record for optimistic update from the form data.
+                // The server returns the real id via Inertia props reload; we use
+                // a temporary id of -2 and let the next prop sync correct it.
+                // However we DO get the fresh props via Inertia's automatic reload
+                // — so we just sync localAttendance from the new props.
+                const freshAttendance = (page.props as unknown as Props).attendance;
+                if (freshAttendance) setLocalAttendance(freshAttendance);
+
                 setAddOpen(false);
                 addForm.reset();
             },
@@ -575,8 +591,29 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
     function submitEdit(e: React.FormEvent) {
         e.preventDefault();
         if (!editForm.data.id) return;
-        editForm.put(route('hr.attendance.update', editForm.data.id), {
-            onSuccess: () => {
+
+        // Capture values before async completes
+        const { id, employee_uid, attend_date, clock_in_time, clock_out_time } = editForm.data;
+
+        editForm.put(route('hr.attendance.update', id), {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                const freshAttendance = (page.props as unknown as Props).attendance;
+                if (freshAttendance) {
+                    setLocalAttendance(freshAttendance);
+                } else {
+                    // Fallback: apply optimistically without server confirmation
+                    const emp = employees.find((e) => e.employee_uid === employee_uid) ?? null;
+                    upsertLocalRecord({
+                        id: id!,
+                        employee_uid,
+                        attend_date,
+                        clock_in_time: clock_in_time || null,
+                        clock_out_time: clock_out_time || null,
+                        created_at: '',
+                        employee: emp,
+                    });
+                }
                 setAddOpen(false);
                 editForm.reset();
             },
@@ -585,7 +622,21 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
 
     function submitDelete() {
         if (!editForm.data.id) return;
-        deleteForm.delete(route('hr.attendance.destroy', editForm.data.id), { onSuccess: () => setDeleteOpen(false) });
+        const idToDelete = editForm.data.id;
+
+        deleteForm.delete(route('hr.attendance.destroy', idToDelete), {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                const freshAttendance = (page.props as unknown as Props).attendance;
+                if (freshAttendance) {
+                    setLocalAttendance(freshAttendance);
+                } else {
+                    // Fallback: remove optimistically
+                    removeLocalRecord(idToDelete);
+                }
+                setDeleteOpen(false);
+            },
+        });
     }
 
     function pageNumbers(): number[] {
@@ -736,7 +787,6 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
 
                 {/* ── Main Table ────────────────────────────────────────────── */}
                 <div className="bg-card rounded-xl border">
-                    {/* Week strip — only in month view */}
                     {tab === 'month' && weekLabel && (
                         <div className="flex items-center gap-2 border-b px-4 py-2">
                             <Calendar className="text-muted-foreground h-3.5 w-3.5" />
@@ -780,7 +830,6 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
                                 {pageRows.map((row, i) => {
                                     const rowNum = (page - 1) * perPage + i + 1;
 
-                                    // ── Pad row ──
                                     if (row.kind === 'pad') {
                                         return (
                                             <TableRow key={`pad-${row.date}`} className="bg-muted/10 pointer-events-none opacity-40 select-none">
@@ -798,7 +847,6 @@ export default function Attendance({ attendance, employees, holidays }: Props) {
                                         );
                                     }
 
-                                    // ── Data row ──
                                     return (
                                         <TableRow key={row.date} className="hover:bg-muted/30">
                                             <TableCell className="text-muted-foreground text-xs">{rowNum}</TableCell>
