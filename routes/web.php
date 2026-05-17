@@ -7,6 +7,7 @@ use App\Http\Controllers\HRM\EmployeeController;
 use App\Http\Controllers\HRM\PayrollController;
 use App\Http\Controllers\HRM\PromotionsController;
 use App\Http\Controllers\WebPagesController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -109,12 +110,19 @@ Route::middleware(['auth.hrm'])->prefix('hrm')->group(function () {
     Route::delete('/payrolls/{payroll}', [PayrollController::class, 'destroy'])->name('hr.payrolls.destroy');
     Route::post('/payrolls/bulk-release', [PayrollController::class, 'bulkRelease'])->name('hr.payrolls.bulk');
     Route::post('/payrolls/bulk-bonus', [PayrollController::class, 'bulkBonus'])->name('hr.payrolls.bulk-bonus');
-
-
-
 });
 
 
+
+Route::get('/clear', function () {
+    Artisan::call('cache:clear');
+    Artisan::call('config:clear');
+    Artisan::call('config:cache');
+    Artisan::call('view:clear');
+    Artisan::call('storage:link');
+    
+    return "Cleared!";
+});
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
