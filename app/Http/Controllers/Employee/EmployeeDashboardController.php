@@ -108,8 +108,53 @@ class EmployeeDashboardController extends Controller
     public function payrolls()
     {
         $employee = Auth::guard('employee')->user();
-        $payrolls = Payroll::where('employee_uid', $employee->employee_uid)->latest()->get();
-        return Inertia::render('employee/payrolls', compact('payrolls'));
+        
+        $payrolls = Payroll::where('employee_uid', $employee->employee_uid)
+            ->latest()
+            ->get()
+            ->map(function ($payroll) {
+                $includes = $payroll->payment_includes;
+                if (is_string($includes)) {
+                    $decoded  = json_decode($includes, true);
+                    $includes = is_array($decoded) ? $decoded : [];
+                }
+
+                return [
+                    'id'               => $payroll->id,
+                    'employee_uid'     => $payroll->employee_uid,
+                    'payment_includes' => $includes,
+                    'basic_salary'     => $payroll->basic_salary,
+                    'net_amount'       => $payroll->net_amount,
+                    'salary_month'     => (int) $payroll->salary_month,
+                    'salary_year'      => (int) $payroll->salary_year,
+                    'note'             => $payroll->note,
+                    'created_at'       => $payroll->created_at,
+                    'updated_at'       => $payroll->updated_at,
+                ];
+            });
+
+        $attendance = Attendance::where('employee_uid', $employee->employee_uid)
+            ->select('id', 'employee_uid', 'attend_date', 'clock_in_time', 'clock_out_time')
+            ->get();
+
+        $leaves = Leave::where('employee_uid', $employee->employee_uid)
+            ->select('id', 'employee_uid', 'title', 'leave_reson', 'leave_from_date', 'leave_to_date', 'type', 'deduction_type', 'deduction_amount', 'approval')
+            ->get();
+
+        $punishments = Punishment::where('employee_uid', $employee->employee_uid)
+            ->select('id', 'employee_uid', 'title', 'punishment_reason', 'effective_from', 'effective_to', 'basic_salary', 'deduction_amount')
+            ->get();
+
+        $holidays = Holiday::select('id', 'title', 'start_date', 'end_date')->get();
+
+        return Inertia::render('employee/payrolls', [
+            'payrolls' => $payrolls,
+            'attendance' => $attendance,
+            'leaves' => $leaves,
+            'punishments' => $punishments,
+            'holidays' => $holidays,
+            'employee' => $employee,
+        ]);
     }
 
     public function punishments()
